@@ -1,0 +1,23 @@
+# permissions for end users to view ingressscriptinjectors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: ingress-injection
+    app.kubernetes.io/managed-by: kustomize
+  name: ingressscriptinjector-viewer-role
+rules:
+- apiGroups:
+  - ingress.digitalist.cloud
+  resources:
+  - ingressscriptinjectors
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ingress.digitalist.cloud
+  resources:
+  - ingressscriptinjectors/status
+  verbs:
+  - get

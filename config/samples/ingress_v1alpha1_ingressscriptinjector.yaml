@@ -1,0 +1,9 @@
+apiVersion: ingress.digitalist.cloud/v1alpha1
+kind: IngressScriptInjector
+metadata:
+  labels:
+    app.kubernetes.io/name: ingress-injection
+    app.kubernetes.io/managed-by: kustomize
+  name: ingressscriptinjector-sample
+spec:
+  # TODO(user): Add fields here

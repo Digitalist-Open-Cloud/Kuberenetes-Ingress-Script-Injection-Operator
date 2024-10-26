@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- ingress_v1alpha1_ingressscriptinjector.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
