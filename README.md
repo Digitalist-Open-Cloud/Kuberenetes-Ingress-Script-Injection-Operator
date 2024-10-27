@@ -8,7 +8,7 @@ Install the operator (see Install or [development docs](DEVELOPMENT.md)).
 
 Create a configmap, like (here the HTML is a simple JavaScript, printing "bar" in the web browser console):
 
-```sh
+```yaml
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -19,7 +19,7 @@ data:
 
 Add annotation in an ingress with reference to the configmap:
 
-```sh
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -32,7 +32,7 @@ spec:
 
 This will inject a javascript (`<script>console.log("bar");</script>`) just before the end of the `head` tag in HTML on every page served by the ingress by adding a `nginx.ingress.kubernetes.io/configuration-snippet` (or merge with existing ones), resulting in this:
 
-```sh
+```yaml
 nginx.ingress.kubernetes.io/configuration-snippet: |
    sub_filter '</head>' '<script>console.log("bar")</script></head>';
 ```
@@ -76,7 +76,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+<http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
