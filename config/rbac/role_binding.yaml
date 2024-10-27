@@ -1,15 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  labels:
-    app.kubernetes.io/name: ingress-injection
-    app.kubernetes.io/managed-by: kustomize
-  name: manager-rolebinding
+  name: ingress-script-injector-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: ingress-injection-system
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: manager-role
-subjects:
-- kind: ServiceAccount
-  name: controller-manager
-  namespace: system
+  apiGroup: rbac.authorization.k8s.io

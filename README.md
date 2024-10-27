@@ -41,8 +41,8 @@ nginx.ingress.kubernetes.io/configuration-snippet: |
 - digitalist.cloud/add-script-head-end - injects at end of head tag.
 ...
 
-
 ## Description
+
 // TODO(user): An in-depth paragraph about your project and overview of use
 
 ## Getting Started
@@ -54,7 +54,6 @@ nginx.ingress.kubernetes.io/configuration-snippet: |
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
 - Ingress built with http_sub_module (included by default in <https://github.com/kubernetes/ingress-nginx>)
-
 
 ### To Deploy on the cluster
 
@@ -83,22 +82,7 @@ make deploy IMG=<some-registry>/ingress-injection:tag
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin.
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
-```sh
-kubectl apply -k config/samples/
-```
-
->**NOTE**: Ensure that the samples has default values to test it out.
-
 ### To Uninstall
-
-**Delete the instances (CRs) from the cluster:**
-
-```sh
-kubectl delete -k config/samples/
-```
 
 **Delete the APIs(CRDs) from the cluster:**
 
@@ -136,6 +120,7 @@ kubectl apply -f https://raw.githubusercontent.com/<org>/ingress-injection/<tag 
 ```
 
 ## Contributing
+
 // TODO(user): Add detailed information on how you would like others to contribute to this project
 
 **NOTE:** Run `make help` for more information on all potential `make` targets

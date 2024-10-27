@@ -27,8 +27,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	ingressv1alpha1 "github.com/Digitalist-Open-Cloud/Kuberenetes-Ingress-Script-Injection-Operator/api/v1alpha1"
 )
 
 // Constants for annotations
@@ -47,7 +45,8 @@ type IngressScriptInjectorReconciler struct {
 // +kubebuilder:rbac:groups=ingress.digitalist.cloud,resources=ingressscriptinjectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=ingress.digitalist.cloud,resources=ingressscriptinjectors/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
-// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 // Reconcile handles the main reconciliation logic
 func (r *IngressScriptInjectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -81,20 +80,22 @@ func (r *IngressScriptInjectorReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
-	// Construct the NGINX configuration snippet
-	configurationSnippet := fmt.Sprintf("sub_filter '</head>' '%s</head>';", script)
+	// Construct the desired NGINX configuration snippet
+	newSnippet := fmt.Sprintf("sub_filter '</head>' '%s</head>';", script)
 
-	// Check if there is an existing configuration snippet to merge with
+	// Check if the annotation already contains the desired snippet to avoid redundant updates
 	existingSnippet, hasSnippet := ingress.Annotations[nginxConfigSnippetAnnotation]
-	if hasSnippet {
-		configurationSnippet = fmt.Sprintf("%s\n%s", existingSnippet, configurationSnippet)
+	if hasSnippet && existingSnippet == newSnippet {
+		// The snippet is already present, so no need to update
+		logger.Info("Snippet already present, no update required", "Ingress", req.NamespacedName)
+		return ctrl.Result{}, nil
 	}
 
-	// Update the Ingress with the new or merged configuration snippet
+	// Prepare to update the annotation by either adding or appending to existing snippet
 	if ingress.Annotations == nil {
 		ingress.Annotations = make(map[string]string)
 	}
-	ingress.Annotations[nginxConfigSnippetAnnotation] = configurationSnippet
+	ingress.Annotations[nginxConfigSnippetAnnotation] = newSnippet
 
 	// Apply the update to the Ingress
 	if err := r.Update(ctx, &ingress); err != nil {
@@ -109,7 +110,6 @@ func (r *IngressScriptInjectorReconciler) Reconcile(ctx context.Context, req ctr
 // SetupWithManager registers the controller with the manager
 func (r *IngressScriptInjectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&ingressv1alpha1.IngressScriptInjector{}).
-		Named("ingressscriptinjector").
+		For(&networkingv1.Ingress{}). // Watch for changes to Ingress resources
 		Complete(r)
 }
