@@ -4,7 +4,7 @@ A [KISS](https://en.wikipedia.org/wiki/KISS_principle)-styled operator, doing on
 
 The HTML is injected by using `sub_filter` from [using ngx_http_sub_module](http://nginx.org/en/docs/http/ngx_http_sub_module.html), which is included by default in [Ingress NGINX Controller](https://github.com/kubernetes/ingress-nginx), which is the only Ingress Controller supported.
 
-Install the operator (see Simple install or To deploy in a cluster).
+Install the operator (see Install or [development docs](DEVELOPMENT.md)).
 
 Create a configmap, like (here the HTML is a simple JavaScript, printing "bar" in the web browser console):
 
