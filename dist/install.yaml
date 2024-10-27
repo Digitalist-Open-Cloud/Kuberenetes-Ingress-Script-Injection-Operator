@@ -333,7 +333,7 @@ spec:
         env:
         - name: WATCH_NAMESPACE
           value: ""
-        image: digitalist/ingress-injection:alpha12
+        image: digitalist/ingress-injection:0.0.1
         livenessProbe:
           httpGet:
             path: /healthz

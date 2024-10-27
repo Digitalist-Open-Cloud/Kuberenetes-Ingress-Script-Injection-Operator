@@ -66,7 +66,7 @@ kubectl delete -f https://raw.githubusercontent.com/Digitalist-Open-Cloud/Kubere
 
 ## Customization and development
 
-See <DEVELOPMENT.md>
+See [development-documentation](DEVELOPMENT.md).
 
 ## License
 

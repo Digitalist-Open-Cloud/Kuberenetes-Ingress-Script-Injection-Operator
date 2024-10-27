@@ -1,4 +1,4 @@
-# Development and customization
+# Customization and development
 
 ## Getting Started
 
