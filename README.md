@@ -1,21 +1,23 @@
-# ingress-injection
+# Ingress injection
 
-A [KISS](https://en.wikipedia.org/wiki/KISS_principle)-styled operator, doing one thing - injecting html in nginx ingress resources based on annotations, and using configmaps as sources for the html.
+A [KISS](https://en.wikipedia.org/wiki/KISS_principle)-styled operator, doing one thing - injecting html in Nginx ingress resources based on annotations, and using configmaps as sources for the html.
 
-Install the operator (see Installation)
+The HTML is injected by using `sub_filter` from [using ngx_http_sub_module](http://nginx.org/en/docs/http/ngx_http_sub_module.html), which is included by default in [Ingress NGINX Controller](https://github.com/kubernetes/ingress-nginx), which is the only Ingress Controller supported.
+
+Install the operator (see Simple install or To deploy in a cluster).
 
 Create a configmap, like (here the HTML is a simple JavaScript, printing "bar" in the web browser console):
 
 ```sh
-apiVersion: v1
 kind: ConfigMap
+apiVersion: v1
 metadata:
-  name: script-injection-one
+  name: script-injection-bar
 data:
   script: '<script>console.log("bar");</script>'
 ```
 
-Add script by annotation:
+Add annotation in an ingress with reference to the configmap:
 
 ```sh
 apiVersion: networking.k8s.io/v1
@@ -23,27 +25,38 @@ kind: Ingress
 metadata:
   name: my-ingress
   annotations:
-    digitalist.cloud/add-script-head-end: "script-injection-one"
+    digitalist.cloud/add-script-head-end: "script-injection-bar"
 spec:
-  # Define your ingress rules here
+  ...
 ```
 
-This will inject a javascript (`<script>console.log("bar");</script>`) just at the end of the `head` tag in HTML on every page served by the ingress by adding a `nginx.ingress.kubernetes.io/configuration-snippet` (or merge with existing ones), resulting in this:
+This will inject a javascript (`<script>console.log("bar");</script>`) just before the end of the `head` tag in HTML on every page served by the ingress by adding a `nginx.ingress.kubernetes.io/configuration-snippet` (or merge with existing ones), resulting in this:
 
 ```sh
 nginx.ingress.kubernetes.io/configuration-snippet: |
-   sub_filter '</head>' '<script>console.log("bar");
-     </script></head>';
+   sub_filter '</head>' '<script>console.log("bar")</script></head>';
 ```
+
+## 'script'
+
+The configmap needs the key `script` but it doesn't need to be a script that is referenced, it could be any valid HTML.
 
 ## Supported annotations
 
-- digitalist.cloud/add-script-head-end - injects at end of head tag.
-...
+| Annotation                               | Description                     |
+| ---------------------------------------- | ------------------------------- |
+| `digitalist.cloud/add-script-head-end`   | injects before end of head tag  |
+| `digitalist.cloud/add-script-head-start` | injects after start of head tag |
+| `digitalist.cloud/add-script-body-start` | injects after start of body tag |
+| `digitalist.cloud/add-script-body-end`   | injects before end of body tag  |
 
-## Description
+## Simple install
 
-// TODO(user): An in-depth paragraph about your project and overview of use
+Run the installer:
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/<org>/ingress-injection/<tag or branch>/dist/install.yaml
+```
 
 ## Getting Started
 
@@ -55,7 +68,7 @@ nginx.ingress.kubernetes.io/configuration-snippet: |
 - Access to a Kubernetes v1.11.3+ cluster.
 - Ingress built with http_sub_module (included by default in <https://github.com/kubernetes/ingress-nginx>)
 
-### To Deploy on the cluster
+### To deploy in a cluster
 
 **Build and push your image to the location specified by `IMG`:**
 
@@ -80,7 +93,7 @@ make deploy IMG=<some-registry>/ingress-injection:tag
 ```
 
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
+> privileges or be logged in as admin.
 
 ### To Uninstall
 
@@ -100,7 +113,9 @@ make undeploy
 
 Following are the steps to build the installer and distribute this project to users.
 
-1. Build the installer for the image built and published in the registry:
+### Build
+
+Build the installer for the image built and published in the registry:
 
 ```sh
 make build-installer IMG=<some-registry>/ingress-injection:tag
@@ -111,7 +126,7 @@ file in the dist directory. This file contains all the resources built
 with Kustomize, which are necessary to install this project without
 its dependencies.
 
-2. Using the installer
+## Using the installer
 
 Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
 
@@ -119,17 +134,9 @@ Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project
 kubectl apply -f https://raw.githubusercontent.com/<org>/ingress-injection/<tag or branch>/dist/install.yaml
 ```
 
-## Contributing
-
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
 ## License
 
-Copyright 2024.
+Copyright 2024 by Digitalist Open Cloud.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -142,4 +149,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-

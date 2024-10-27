@@ -31,8 +31,11 @@ import (
 
 // Constants for annotations
 const (
-	headEndAnnotation            = "digitalist.cloud/add-script-head-end"
-	nginxConfigSnippetAnnotation = "nginx.ingress.kubernetes.io/configuration-snippet"
+	headEnd            = "digitalist.cloud/add-script-head-end"
+	headStart          = "digitalist.cloud/add-script-head-start"
+	bodyStart          = "digitalist.cloud/add-script-body-start"
+	bodyEnd            = "digitalist.cloud/add-script-body-end"
+	nginxConfigSnippet = "nginx.ingress.kubernetes.io/configuration-snippet"
 )
 
 // IngressScriptInjectorReconciler reconciles a IngressScriptInjector object
@@ -52,58 +55,86 @@ type IngressScriptInjectorReconciler struct {
 func (r *IngressScriptInjectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	// Fetch the Ingress resource
 	var ingress networkingv1.Ingress
 	if err := r.Get(ctx, req.NamespacedName, &ingress); err != nil {
 		logger.Error(err, "Unable to fetch Ingress")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Check if the Ingress has the add-script-head-end annotation
-	configMapName, ok := ingress.Annotations[headEndAnnotation]
-	if !ok {
-		// If the annotation is missing, no processing is needed
+	// Collect configuration snippets based on annotations
+	snippets := []string{}
+
+	// Utility function to retrieve the ConfigMap script
+	getScriptFromConfigMap := func(configMapName string) (string, error) {
+		var configMap corev1.ConfigMap
+		if err := r.Get(ctx, types.NamespacedName{Name: configMapName, Namespace: req.Namespace}, &configMap); err != nil {
+			return "", err
+		}
+		script, exists := configMap.Data["script"]
+		if !exists {
+			return "", fmt.Errorf("ConfigMap %s does not contain 'script' key", configMapName)
+		}
+		return script, nil
+	}
+
+	// Check for each annotation and prepare snippets based on position
+	if configMapName, ok := ingress.Annotations[headEnd]; ok {
+		if script, err := getScriptFromConfigMap(configMapName); err == nil {
+			snippets = append(snippets, fmt.Sprintf("sub_filter '</head>' '%s</head>';", script))
+		} else {
+			logger.Error(err, "Unable to fetch ConfigMap for head end script", "ConfigMap", configMapName)
+		}
+	}
+
+	if configMapName, ok := ingress.Annotations[headStart]; ok {
+		if script, err := getScriptFromConfigMap(configMapName); err == nil {
+			snippets = append(snippets, fmt.Sprintf("sub_filter '<head>' '<head>%s';", script))
+		} else {
+			logger.Error(err, "Unable to fetch ConfigMap for head beginning script", "ConfigMap", configMapName)
+		}
+	}
+
+	if configMapName, ok := ingress.Annotations[bodyStart]; ok {
+		if script, err := getScriptFromConfigMap(configMapName); err == nil {
+			snippets = append(snippets, fmt.Sprintf("sub_filter '<body>' '<body>%s';", script))
+		} else {
+			logger.Error(err, "Unable to fetch ConfigMap for body beginning script", "ConfigMap", configMapName)
+		}
+	}
+
+	if configMapName, ok := ingress.Annotations[bodyEnd]; ok {
+		if script, err := getScriptFromConfigMap(configMapName); err == nil {
+			snippets = append(snippets, fmt.Sprintf("sub_filter '</body>' '%s</body>';", script))
+		} else {
+			logger.Error(err, "Unable to fetch ConfigMap for body end script", "ConfigMap", configMapName)
+		}
+	}
+
+	// If no snippets to add, exit reconciliation early
+	if len(snippets) == 0 {
 		return ctrl.Result{}, nil
 	}
 
-	// Fetch the ConfigMap referenced by the add-script-head-end annotation
-	var configMap corev1.ConfigMap
-	if err := r.Get(ctx, types.NamespacedName{Name: configMapName, Namespace: req.Namespace}, &configMap); err != nil {
-		logger.Error(err, "Unable to fetch ConfigMap", "ConfigMap", configMapName)
-		return ctrl.Result{}, err
+	// Combine snippets and update the annotation
+	combinedSnippet := ""
+	if existingSnippet, hasSnippet := ingress.Annotations[nginxConfigSnippet]; hasSnippet {
+		combinedSnippet = fmt.Sprintf("%s\n%s", existingSnippet, combinedSnippet)
 	}
+	combinedSnippet += fmt.Sprintf("%s\n", snippets)
 
-	// Get the script content from the ConfigMap data
-	script, exists := configMap.Data["script"]
-	if !exists {
-		logger.Info("ConfigMap does not contain 'script' key", "ConfigMap", configMapName)
-		return ctrl.Result{}, nil
-	}
-
-	// Construct the desired NGINX configuration snippet
-	newSnippet := fmt.Sprintf("sub_filter '</head>' '%s</head>';", script)
-
-	// Check if the annotation already contains the desired snippet to avoid redundant updates
-	existingSnippet, hasSnippet := ingress.Annotations[nginxConfigSnippetAnnotation]
-	if hasSnippet && existingSnippet == newSnippet {
-		// The snippet is already present, so no need to update
-		logger.Info("Snippet already present, no update required", "Ingress", req.NamespacedName)
-		return ctrl.Result{}, nil
-	}
-
-	// Prepare to update the annotation by either adding or appending to existing snippet
+	// Ensure Ingress annotations map is initialized
 	if ingress.Annotations == nil {
 		ingress.Annotations = make(map[string]string)
 	}
-	ingress.Annotations[nginxConfigSnippetAnnotation] = newSnippet
+	ingress.Annotations[nginxConfigSnippet] = combinedSnippet
 
 	// Apply the update to the Ingress
 	if err := r.Update(ctx, &ingress); err != nil {
-		logger.Error(err, "Failed to update Ingress with configuration snippet")
+		logger.Error(err, "Failed to update Ingress with configuration snippets")
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Successfully updated Ingress with configuration snippet", "Ingress", req.NamespacedName)
+	logger.Info("Successfully updated Ingress with configuration snippets", "Ingress", req.NamespacedName)
 	return ctrl.Result{}, nil
 }
 

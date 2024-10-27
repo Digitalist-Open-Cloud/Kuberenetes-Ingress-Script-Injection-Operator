@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: digitalist/ingress-injection
-  newTag: alpha11
+  newTag: alpha12
