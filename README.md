@@ -1,10 +1,10 @@
 # ingress-injection
 
-A [KISS](https://en.wikipedia.org/wiki/KISS_principle)-styled operator, doing one thing - injects html in nginx ingress resources based on annotations, and using configmaps as sources.
+A [KISS](https://en.wikipedia.org/wiki/KISS_principle)-styled operator, doing one thing - injecting html in nginx ingress resources based on annotations, and using configmaps as sources for the html.
 
 Install the operator (see Installation)
 
-Create a configmap, like:
+Create a configmap, like (here the HTML is a simple JavaScript, printing "bar" in the web browser console):
 
 ```sh
 apiVersion: v1
@@ -36,6 +36,11 @@ nginx.ingress.kubernetes.io/configuration-snippet: |
      </script></head>';
 ```
 
+## Supported annotations
+
+- digitalist.cloud/add-script-head-end - injects at end of head tag.
+...
+
 
 ## Description
 // TODO(user): An in-depth paragraph about your project and overview of use
@@ -48,6 +53,8 @@ nginx.ingress.kubernetes.io/configuration-snippet: |
 - docker version 17.03+.
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
+- Ingress built with http_sub_module (included by default in <https://github.com/kubernetes/ingress-nginx>)
+
 
 ### To Deploy on the cluster
 
