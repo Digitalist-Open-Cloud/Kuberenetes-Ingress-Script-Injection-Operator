@@ -55,7 +55,13 @@ The configmap needs the key `script` but it doesn't need to be a script that is 
 Run the installer:
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/ingress-injection/<tag or branch>/dist/install.yaml
+kubectl apply -f https://raw.githubusercontent.com/Digitalist-Open-Cloud/Kuberenetes-Ingress-Script-Injection-Operator/refs/heads/main/dist/install.yaml
+```
+
+## Simple uninstall
+
+```sh
+kubectl delete -f https://raw.githubusercontent.com/Digitalist-Open-Cloud/Kuberenetes-Ingress-Script-Injection-Operator/refs/heads/main/dist/install.yaml
 ```
 
 ## Getting Started
